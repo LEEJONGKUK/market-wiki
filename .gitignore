@@ -1,0 +1,16 @@
+# ⚠️ 내부 자료 — 절대 GitHub에 올리지 않음 (회의록·메모·기회 분석)
+internal/
+
+# 유료 리포트 원문 (저작권) — 요약만 공개
+raw/reports/*.pdf
+raw/reports/*.PDF
+
+# Obsidian 개인 설정
+.obsidian/workspace*.json
+.obsidian/cache
+.trash/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
