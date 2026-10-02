@@ -1,0 +1,221 @@
+<title>Market Wiki 파이프라인</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: stages flow left→right as a conveyor (stacks top→bottom on phones); a second, fenced lane below carries internal/ which never reaches GitHub */
+:root{
+  --bg:#f6f7f8; --surface:#ffffff; --ink:#0f1720; --ink-2:#4a5562; --muted:#7b8591;
+  --line:#d5dbe1; --accent:#1f6fd1; --accent-soft:#e6f0fb; --lock:#b4232a; --lock-soft:#fbeceb; --ok:#11734b; --warn:#9a6400;
+  --font:"IBM Plex Sans KR",system-ui,-apple-system,"Segoe UI","Malgun Gothic",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1116; --surface:#161b22; --ink:#f1f4f7; --ink-2:#b9c2cc; --muted:#8b95a1;
+  --line:#2d353f; --accent:#5aa0f2; --accent-soft:#16263a; --lock:#f07a7f; --lock-soft:#2a1719; --ok:#3fca8a; --warn:#e6b04a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1116; --surface:#161b22; --ink:#f1f4f7; --ink-2:#b9c2cc; --muted:#8b95a1;
+  --line:#2d353f; --accent:#5aa0f2; --accent-soft:#16263a; --lock:#f07a7f; --lock-soft:#2a1719; --ok:#3fca8a; --warn:#e6b04a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:14.5px;line-height:1.55;margin:0}
+.wrap{max-width:1280px;margin:0 auto;padding-inline:20px;padding-block:28px 48px;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.eyebrow{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.02em}
+h1{font-size:clamp(24px,3.6vw,32px);line-height:1.2;margin:0;font-weight:700;text-wrap:balance}
+.lede{margin:0;color:var(--ink-2);max-width:68ch}
+code,.mono{font-family:var(--mono);font-size:.92em}
+
+.status{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2)}
+.chip b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.chip.warn{border-color:var(--warn);color:var(--warn)} .chip.warn b{color:var(--warn)}
+.chip.ok{border-color:var(--ok);color:var(--ok)} .chip.ok b{color:var(--ok)}
+
+.lane-label{display:flex;align-items:center;gap:10px;font-size:12.5px;font-weight:600;color:var(--ink-2);letter-spacing:.04em}
+.lane-label::after{content:"";flex:1;height:1px;background:var(--line)}
+
+.flow{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;align-items:stretch}
+.stage{position:relative;display:grid;align-content:start;gap:10px;padding:14px 14px 16px;background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-right:26px;min-width:0}
+.stage:last-child{margin-right:0}
+.stage::after{content:"";position:absolute;right:-21px;top:34px;width:16px;height:2px;background:var(--accent)}
+.stage::before{content:"";position:absolute;right:-23px;top:30px;border:5px solid transparent;border-left:7px solid var(--accent)}
+.stage:last-child::after,.stage:last-child::before{display:none}
+.step{font-family:var(--mono);font-size:11.5px;color:var(--accent);font-weight:500}
+.stage h3{margin:0;font-size:15.5px;font-weight:700;line-height:1.3}
+.who{font-size:12px;color:var(--muted)}
+.path{font-family:var(--mono);font-size:12px;color:var(--ink-2);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:2px 7px;width:max-content;max-width:100%;overflow-wrap:anywhere}
+ul.items{list-style:none;margin:0;padding:0;display:grid;gap:5px}
+ul.items li{display:flex;justify-content:space-between;gap:8px;font-size:13px;border-bottom:1px dashed var(--line);padding-bottom:4px}
+ul.items li:last-child{border-bottom:0}
+ul.items .n{font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink)}
+ul.items .n.zero{color:var(--muted);font-weight:400}
+ul.items .q{font-family:var(--mono);font-size:11px;color:var(--accent);background:var(--accent-soft);border-radius:4px;padding:0 5px;margin-left:4px}
+.say{display:grid;gap:4px}
+.say span{font-size:11.5px;color:var(--muted)}
+.say code{display:block;background:var(--accent-soft);color:var(--ink);border-radius:6px;padding:5px 8px;font-size:12px;overflow-wrap:anywhere}
+.stage.gh{border-color:var(--ok)}
+.stage.gh .step{color:var(--ok)}
+.pending{font-size:12px;color:var(--warn);font-weight:600}
+
+.loop{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:13px;color:var(--ink-2);background:var(--surface);border:1px dashed var(--accent);border-radius:10px;padding:10px 14px}
+.loop b{color:var(--accent)}
+
+.internal{display:grid;grid-template-columns:minmax(0,2fr) auto minmax(0,1fr);gap:16px;align-items:stretch;background:var(--lock-soft);border:1.5px dashed var(--lock);border-radius:12px;padding:16px}
+.internal .stage{margin-right:0;border-color:color-mix(in srgb,var(--lock) 45%,var(--line))}
+.internal .stage::after,.internal .stage::before{display:none}
+.internal .step{color:var(--lock)}
+.ipair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.gate{display:grid;place-items:center;align-content:center;gap:6px;min-width:120px;text-align:center;color:var(--lock);font-size:12.5px;font-weight:600}
+.gate .bar{width:4px;height:70px;background:repeating-linear-gradient(180deg,var(--lock) 0 8px,transparent 8px 14px);border-radius:2px}
+.gate small{font-family:var(--mono);font-weight:400;color:var(--ink-2)}
+.feeds{font-size:12.5px;color:var(--ink-2);display:grid;gap:4px;align-content:center}
+.feeds b{color:var(--ink)}
+
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:12.5px;color:var(--ink-2)}
+.legend i{display:inline-block;width:14px;height:10px;border-radius:2px;vertical-align:-1px;margin-right:6px}
+.foot{font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+
+@media (max-width:1100px){.flow{grid-template-columns:repeat(3,minmax(0,1fr));row-gap:22px}
+  .stage:nth-child(3n){margin-right:0}.stage:nth-child(3n)::after,.stage:nth-child(3n)::before{display:none}}
+@media (max-width:680px){
+  .flow{grid-template-columns:1fr;row-gap:26px}
+  .stage{margin-right:0}
+  .stage::after{right:auto;left:30px;top:auto;bottom:-21px;width:2px;height:16px}
+  .stage::before{right:auto;left:26px;top:auto;bottom:-24px;border:5px solid transparent;border-top:7px solid var(--accent)}
+  .stage:nth-child(3n)::after,.stage:nth-child(3n)::before{display:block}
+  .stage:last-child::after,.stage:last-child::before{display:none}
+  .internal{grid-template-columns:1fr}.ipair{grid-template-columns:1fr}
+  .gate{grid-auto-flow:column;min-width:0}.gate .bar{width:70px;height:4px;background:repeating-linear-gradient(90deg,var(--lock) 0 8px,transparent 8px 14px)}
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">market-wiki · LLM Wiki 패턴 · 2026-10-02 현재</div>
+    <h1>자료가 들어와서 GitHub에 올라가기까지</h1>
+    <p class="lede">사람은 자료를 고르고 질문합니다. Claude는 요약하고, 페이지를 서로 잇고, 목차와 기록을 관리합니다. 숫자는 지금 저장소에 있는 실제 파일 수입니다.</p>
+  </header>
+
+  <div class="status" aria-label="현재 상태">
+    <span class="chip">출처 <b>43</b></span>
+    <span class="chip">위키 페이지 <b>25</b></span>
+    <span class="chip">아직 만들지 않은 후보 페이지 <b>약 100</b></span>
+    <span class="chip warn">커밋 대기 변경 <b>114</b>개 파일</span>
+    <span class="chip warn">검증 필요 항목 <b>3</b></span>
+    <span class="chip ok">internal/ GitHub 차단 <b>확인됨</b></span>
+  </div>
+
+  <div class="lane-label">공개 레인 · GitHub Public에 올라감</div>
+  <div class="flow">
+    <div class="stage">
+      <div class="step">1 · 수집</div>
+      <h3>원본 자료</h3>
+      <div class="who">사람 (또는 Claude 웹 리서치)</div>
+      <div class="path">raw/</div>
+      <ul class="items">
+        <li>웹 아티클 <span class="n">43</span></li>
+        <li>PDF·리포트 <span class="n zero">0</span></li>
+        <li>영상·팟캐스트 스크립트 <span class="n zero">0</span></li>
+      </ul>
+      <div class="say"><span>도구</span><code>Obsidian Web Clipper</code></div>
+    </div>
+
+    <div class="stage">
+      <div class="step">2 · Ingest</div>
+      <h3>읽고 요약</h3>
+      <div class="who">Claude · 원본은 수정하지 않음</div>
+      <div class="path">wiki/sources/</div>
+      <ul class="items">
+        <li>출처 요약 페이지 <span class="n">43</span></li>
+        <li>미국 · 일본 · 중국 <span class="n">8 · 8 · 10</span></li>
+        <li>동남아 · 유럽 <span class="n">9 · 8</span></li>
+      </ul>
+      <div class="say"><span>이렇게 말하기</span><code>ingest raw/articles/파일명.md</code></div>
+    </div>
+
+    <div class="stage">
+      <div class="step">3 · 연결</div>
+      <h3>주제별 페이지</h3>
+      <div class="who">Claude · 자료 1건이 여러 페이지를 갱신</div>
+      <div class="path">wiki/</div>
+      <ul class="items">
+        <li>경쟁사<span class="q">Q1</span> <span class="n">7</span></li>
+        <li>트렌드<span class="q">Q2</span> <span class="n">6</span></li>
+        <li>시장<span class="q">Q2</span> <span class="n">5</span></li>
+        <li>채널<span class="q">Q3</span> <span class="n">6</span></li>
+      </ul>
+    </div>
+
+    <div class="stage">
+      <div class="step">4 · 정리</div>
+      <h3>목차와 기록</h3>
+      <div class="who">Claude · 매 ingest마다 갱신</div>
+      <div class="path">index.md · log.md</div>
+      <ul class="items">
+        <li>분석 페이지 <span class="n">1</span></li>
+        <li>목차 항목 <span class="n">68</span></li>
+        <li>작업 기록 <span class="n">2</span></li>
+      </ul>
+      <div class="say"><span>규칙</span><code>CLAUDE.md</code></div>
+    </div>
+
+    <div class="stage">
+      <div class="step">5 · 활용</div>
+      <h3>질문 · 점검 · 시각화</h3>
+      <div class="who">사람이 묻고 Claude가 답함</div>
+      <div class="path">wiki/analyses/</div>
+      <div class="say"><span>질문</span><code>query: 올리브영 해외 확장 현황은?</code></div>
+      <div class="say"><span>점검</span><code>lint</code></div>
+    </div>
+
+    <div class="stage gh">
+      <div class="step">6 · 배포</div>
+      <h3>GitHub</h3>
+      <div class="who">사람이 요청할 때만 push</div>
+      <div class="path">LEEJONGKUK/market-wiki</div>
+      <ul class="items">
+        <li>공개 범위 <span class="n">Public</span></li>
+        <li>마지막 push <span class="n">초기 구조</span></li>
+      </ul>
+      <div class="pending">▲ 해외 시장 수집분은 아직 커밋 전</div>
+      <div class="say"><span>이렇게 말하기</span><code>커밋하고 push해줘</code></div>
+    </div>
+  </div>
+
+  <div class="loop"><b>↺ 되먹임</b> 쓸 만한 답(5)은 분석 페이지로 저장되어 다시 3·4단계로 들어갑니다. 점검(lint)은 모순, 출처 없는 주장, 연결이 끊긴 페이지를 찾아 3단계에서 고칩니다.</div>
+
+  <div class="lane-label">내부 레인 · 내 컴퓨터에만 있음</div>
+  <div class="internal">
+    <div class="ipair">
+      <div class="stage">
+        <div class="step">1 · 수집</div>
+        <h3>회의록 · 메모</h3>
+        <div class="path">internal/raw/</div>
+        <ul class="items"><li>자료 <span class="n zero">0</span></li></ul>
+      </div>
+      <div class="stage">
+        <div class="step">2~4 · 정리</div>
+        <h3>우리 기회<span class="q" style="margin-left:6px">Q4</span></h3>
+        <div class="path">internal/wiki/</div>
+        <ul class="items"><li>기회 분석 <span class="n zero">0</span></li><li>내부 요약 <span class="n zero">0</span></li></ul>
+      </div>
+    </div>
+    <div class="gate" role="img" aria-label="GitHub 업로드 차단">
+      <div class="bar"></div>
+      <span>GitHub 업로드 차단</span>
+      <small>.gitignore</small>
+    </div>
+    <div class="feeds">
+      <span><b>공개 → 내부</b> 링크는 허용됩니다. 기회 분석은 공개 위키의 트렌드·경쟁사 페이지를 근거로 씁니다.</span>
+      <span><b>내부 → 공개</b> 인용·요약은 금지입니다. 원가, 매출, 거래처 조건, 실명은 공개 페이지에 쓰지 않습니다.</span>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><i style="background:var(--accent)"></i>공개 흐름</span>
+    <span><i style="background:var(--ok)"></i>GitHub 배포</span>
+    <span><i style="background:var(--lock)"></i>로컬 전용 (차단)</span>
+    <span><i style="background:var(--warn)"></i>대기·검증 필요</span>
+  </div>
+
+  <div class="foot">검증 필요 3건: 유럽 수출 수치(기사에 출처 기관 없음), 일본 2024 한국산 수입액(자료 간 상충), 식약처·대한화장품산업연구원 집계 혼재. 위키 내용은 담당자가 검토한 뒤 사용하세요.</div>
+</div>

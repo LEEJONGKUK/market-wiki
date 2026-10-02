@@ -1,0 +1,278 @@
+<title>K-뷰티 해외시장 지도</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one reading column; summary tiles → export bars → growth diverging → China share → market matrix → regulation timeline → sources */
+:root{
+  --bg:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink-2:#52514e; --muted:#7a7873;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.10);
+  --seq:#2a78d6; --seq-soft:#86b6ef; --pos:#2a78d6; --neg:#e34948; --mid:#f0efec;
+  --critical:#d03b3b; --warning:#b97f00; --good:#006300;
+  --font:"IBM Plex Sans KR",system-ui,-apple-system,"Segoe UI","Malgun Gothic",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink-2:#c3c2b7; --muted:#9a988f;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+  --seq:#3987e5; --seq-soft:#184f95; --pos:#3987e5; --neg:#e66767; --mid:#383835;
+  --critical:#e66767; --warning:#fab219; --good:#0ca30c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink-2:#c3c2b7; --muted:#9a988f;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+  --seq:#3987e5; --seq-soft:#184f95; --pos:#3987e5; --neg:#e66767; --mid:#383835;
+  --critical:#e66767; --warning:#fab219; --good:#0ca30c; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.6;margin:0}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:20px;padding-block:32px 56px;display:grid;gap:28px}
+header{display:grid;gap:6px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font-size:clamp(26px,4.2vw,36px);line-height:1.2;margin:0;text-wrap:balance;font-weight:700}
+.lede{color:var(--ink-2);margin:0;max-width:65ch}
+h2{font-size:18px;margin:0;text-wrap:balance;font-weight:600}
+.sub{color:var(--ink-2);font-size:13.5px;margin:0}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;display:grid;gap:4px;min-width:0}
+.tile .k{font-size:12.5px;color:var(--ink-2)}
+.tile .v{font-size:30px;font-weight:700;line-height:1.15}
+.tile .v small{font-size:15px;font-weight:600;color:var(--ink-2);margin-left:2px}
+.tile .n{font-size:12.5px;color:var(--muted)}
+.tile.alert{border-color:var(--critical)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;width:max-content}
+.pill.crit{color:var(--critical);border:1px solid var(--critical)}
+.pill.warn{color:var(--warning);border:1px solid var(--warning)}
+.pill.ok{color:var(--good);border:1px solid var(--good)}
+section.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;display:grid;gap:14px;min-width:0}
+.two{display:grid;grid-template-columns:1.25fr 1fr;gap:28px}
+@media (max-width:820px){.two{grid-template-columns:1fr}}
+.chart{width:100%;min-width:0}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font-family:var(--font);fill:var(--ink-2);font-size:12px}
+.chart .lbl{fill:var(--ink);font-weight:500}
+.chart .val{fill:var(--ink);font-variant-numeric:tabular-nums;font-weight:600}
+.chart .tick{fill:var(--muted);font-variant-numeric:tabular-nums;font-size:11px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--ink-2)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.note{font-size:12.5px;color:var(--muted);margin:0}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:13.5px}
+th,td{text-align:left;vertical-align:top;padding:10px 12px;border-bottom:1px solid var(--grid)}
+th{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.04em}
+td:first-child{font-weight:600;white-space:nowrap}
+.timeline{display:grid;gap:0;position:relative}
+.ev{display:grid;grid-template-columns:118px 16px 1fr;gap:12px;align-items:start;padding-block:10px}
+.ev .d{font-variant-numeric:tabular-nums;font-size:13px;color:var(--ink-2);text-align:right;padding-top:1px}
+.ev .dot{width:12px;height:12px;border-radius:50%;margin-top:5px;border:2px solid var(--axis);background:var(--surface);position:relative}
+.ev.now .dot{border-color:var(--critical);background:var(--critical)}
+.ev.past .dot{background:var(--axis)}
+.ev .t{min-width:0}
+.ev .t b{font-weight:600}
+.ev .t p{margin:2px 0 0;color:var(--ink-2);font-size:13.5px}
+@media (max-width:520px){.ev{grid-template-columns:84px 14px 1fr;gap:8px}.ev .d{font-size:12px}}
+.tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12.5px;padding:8px 10px;border-radius:6px;max-width:260px;line-height:1.45;z-index:10;transform:translate(-50%,calc(-100% - 12px))}
+.tip[hidden]{display:none!important}
+.hit{fill:transparent;cursor:default}
+.hit:focus{outline:none}
+.hit:focus-visible{stroke:var(--ink);stroke-width:1.5}
+footer{display:grid;gap:8px;font-size:12.5px;color:var(--muted)}
+footer ul{margin:0;padding-left:18px;display:grid;gap:2px}
+.review{border:1px dashed var(--axis);border-radius:8px;padding:10px 14px;color:var(--ink-2);font-size:13px}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Market Wiki · 해외 1차 수집 · 2026-10-02 기준</div>
+    <h1>K-뷰티 수출은 중국 한 곳에서 미국·유럽·아시아로 분산됐다</h1>
+    <p class="lede">미국·일본·중국·동남아·유럽 5개 시장의 공개 출처 43건을 위키로 정리한 결과입니다. 수치는 출처마다 집계 기관이 달라 직접 비교에 주의가 필요합니다.</p>
+  </header>
+
+  <div class="tiles">
+    <div class="tile">
+      <span class="k">2025 한국 화장품 총 수출</span>
+      <span class="v">114<small>억 달러</small></span>
+      <span class="n">역대 최대 · +12.3% · 식약처</span>
+    </div>
+    <div class="tile">
+      <span class="k">1위 수출국</span>
+      <span class="v">미국<small>22억 달러</small></span>
+      <span class="n">2025년 처음으로 중국(20억 달러)을 제침</span>
+    </div>
+    <div class="tile">
+      <span class="k">수출 중 중국 비중</span>
+      <span class="v">14.4<small>%</small></span>
+      <span class="n">2021년 53.2% → 2026년 상반기</span>
+    </div>
+    <div class="tile alert">
+      <span class="pill crit">● 마감 임박</span>
+      <span class="k">인도네시아 할랄 표시 의무 시행</span>
+      <span class="v" id="dday">D-16</span>
+      <span class="n">2026-10-18 시행 · BPJPH 원문 확인 필요</span>
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="two">
+      <div style="display:grid;gap:10px;min-width:0">
+        <h2>국가별 K-뷰티 수출액 (2025)</h2>
+        <p class="sub">단위: 억 달러 · 막대에 마우스를 올리면 출처가 보입니다</p>
+        <div class="chart" id="exportChart" role="img" aria-label="2025년 국가별 한국 화장품 수출액 막대그래프"></div>
+      </div>
+      <div style="display:grid;gap:10px;min-width:0;align-content:start">
+        <h2>전년 대비 증감률 (2025)</h2>
+        <p class="sub">미국·영국은 같은 기준의 증감률을 확인하지 못해 제외</p>
+        <div class="chart" id="growthChart" role="img" aria-label="2025년 국가별 수출 증감률 막대그래프"></div>
+        <div class="legend"><span><i style="background:var(--pos)"></i>증가</span><span><i style="background:var(--neg)"></i>감소</span></div>
+      </div>
+    </div>
+    <p class="note">미국·중국: 식약처 · 일본·동남아: 대한화장품산업연구원 잠정 · 영국: Korea JoongAng Daily 인용. 기관이 섞인 혼합 집계입니다.</p>
+  </section>
+
+  <section class="card">
+    <div class="two">
+      <div style="display:grid;gap:10px;min-width:0">
+        <h2>한국 화장품 수출 중 중국 비중</h2>
+        <p class="sub">단위: % · 2022~2024년 값은 수집하지 않아 선으로 잇지 않았습니다</p>
+        <div class="chart" id="shareChart" role="img" aria-label="한국 화장품 수출 중 중국 비중: 2021년 53.2%, 2025년 17.6%, 2026년 상반기 14.4%"></div>
+      </div>
+      <div style="display:grid;gap:10px;min-width:0;align-content:start">
+        <h2>TikTok Shop 미국 뷰티 매출 Top 3 (2026 Q2)</h2>
+        <p class="sub">단위: 백만 달러 · Charm.io 추정치</p>
+        <div class="chart" id="tiktokChart" role="img" aria-label="TikTok Shop 미국 뷰티 매출 상위 3개 브랜드"></div>
+        <p class="note">미국 TikTok Shop 뷰티 전체 GMV는 9.8억 달러(+82%)입니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>5개 시장 한눈에 보기</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>시장</th><th>규모 (기준이 서로 다름)</th><th>K-뷰티 위치</th><th>핵심 채널</th><th>규제 리스크</th></tr></thead>
+        <tbody>
+          <tr><td>미국</td><td>프레스티지 $36B + 매스 $72.7B (2025, Circana)</td><td>수출 1위 · Ulta 13개 브랜드 신규 입점, 올리브영 1호점</td><td>TikTok Shop · Ulta · Target · Sephora</td><td><span class="pill warn">▲ 주의</span> 관세 15% 이상, MoCRA</td></tr>
+          <tr><td>일본</td><td>¥2.58조 (2024년도, 출하액, 야노)</td><td>수입 1위 한국 (2022~) · 큐텐 어워즈 수상 50개 중 38개</td><td>큐텐 메가와리·메가데뷔 · @cosme</td><td><span class="pill ok">● 안정</span> 薬機法 절차</td></tr>
+          <tr><td>중국</td><td>소매 4,653억 위안 (2025, 국가통계국)</td><td>수출 -19.5% · 로컬 C-뷰티 점유율 57.4%</td><td>티몰 · 더우인 · 하이난 면세</td><td><span class="pill ok">● 완화</span> NMPA 개혁</td></tr>
+          <tr><td>동남아</td><td>이커머스 GMV $157.6B (전 카테고리)</td><td>인도네시아 +23%, 필리핀 +22.8% · 베트남 -11.7%</td><td>쇼피 · TikTok Shop · 세포라</td><td><span class="pill crit">● 임박</span> 인니 할랄 10-18</td></tr>
+          <tr><td>유럽</td><td>€110B (2025, Cosmetics Europe)</td><td>2026년 상반기 북미 추월 (검증 필요) · 영국 교두보</td><td>부츠 · TikTok Shop UK · 세포라</td><td><span class="pill warn">▲ 주의</span> CMR 금지, PPWR</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>해외 규제 일정</h2>
+    <p class="sub">규제·컴플라이언스 담당자 확인이 필요한 항목입니다</p>
+    <div class="timeline" id="timeline"></div>
+  </section>
+
+  <div class="review">이 페이지는 Claude가 공개 출처를 요약해 만든 자료입니다. 의사결정이나 외부 공유 전에 담당자가 원문과 공식 통계로 검토해 주세요.</div>
+
+  <footer>
+    <strong style="color:var(--ink-2)">주요 출처</strong>
+    <ul>
+      <li>식품의약품안전처 2025 화장품 수출 실적 (코스모닝·뉴시스 보도)</li>
+      <li>대한화장품산업연구원 2025 국가별 수출실적 분석 ①~③ (코스모닝)</li>
+      <li>식약처 2026년 상반기 수출 실적 (코스인코리아)</li>
+      <li>Circana 2025 · 야노경제연구소 2025 · 국가통계국 (Jing Daily) · Cosmetics Europe</li>
+      <li>Beauty Independent / Charm.io · ChemLinked · 데일리안 · COSlaw.eu · Foley & Lardner · NMPA</li>
+    </ul>
+    <span>전체 출처 43건은 저장소의 wiki/sources/ 폴더에 있습니다.</span>
+  </footer>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+(function(){
+  const NS="http://www.w3.org/2000/svg";
+  const tip=document.getElementById("tip");
+  function el(n,a,p){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e}
+  function showTip(evt,html){tip.innerHTML=html;tip.hidden=false;moveTip(evt)}
+  function moveTip(evt){let x,y;if(evt.clientX!==undefined&&evt.type!=="focus"){x=evt.clientX;y=evt.clientY}else{const r=evt.target.getBoundingClientRect();x=r.left+r.width/2;y=r.top}
+    const w=tip.offsetWidth/2;x=Math.max(w+8,Math.min(window.innerWidth-w-8,x));tip.style.left=x+"px";tip.style.top=y+"px"}
+  function hideTip(){tip.hidden=true}
+  function bindHit(r,html){r.setAttribute("tabindex","0");r.addEventListener("mouseenter",e=>showTip(e,html));r.addEventListener("mousemove",moveTip);r.addEventListener("mouseleave",hideTip);r.addEventListener("focus",e=>showTip(e,html));r.addEventListener("blur",hideTip)}
+  // rounded data-end bar: square at baseline, 4px radius at the end
+  function barPath(x0,x1,y,h){const r=Math.min(4,h/2,Math.abs(x1-x0));if(x1>=x0){return `M${x0},${y}H${x1-r}Q${x1},${y} ${x1},${y+r}V${y+h-r}Q${x1},${y+h} ${x1-r},${y+h}H${x0}Z`}
+    return `M${x0},${y}H${x1+r}Q${x1},${y} ${x1},${y+r}V${y+h-r}Q${x1},${y+h} ${x1+r},${y+h}H${x0}Z`}
+
+  // D-day
+  try{const t=new Date("2026-10-18T00:00:00+07:00"),n=new Date();const d=Math.ceil((t-n)/864e5);const dd=document.getElementById("dday");if(d>0)dd.textContent="D-"+d;else if(d===0)dd.textContent="D-Day";else dd.textContent="시행 중"}catch(e){}
+
+  // 1) export bars
+  const exp=[
+    ["미국",22.0,"식약처","순위 1위"],["중국",20.0,"식약처","순위 2위, -19.5%"],["일본",10.87,"대한화장품산업연구원","순위 3위, +5.0%"],
+    ["베트남",4.77,"대한화장품산업연구원","순위 5위, -11.7%"],["태국",2.514,"대한화장품산업연구원","순위 10위, +11.0%"],
+    ["영국",1.882,"Korea JoongAng Daily 인용","2021년 0.56억 달러의 약 3.3배"],["인도네시아",1.68,"대한화장품산업연구원","순위 13위, +23.0%"],
+    ["말레이시아",1.62,"대한화장품산업연구원","+6.2%"],["싱가포르",1.47,"대한화장품산업연구원","-4.7%"],["필리핀",1.12,"대한화장품산업연구원","+22.8%"]];
+  (function(){
+    const W=560,L=78,R=48,rowH=26,bh=14,T=8,H=T+exp.length*rowH+24,max=25,sx=v=>L+(W-L-R)*v/max;
+    const s=el("svg",{viewBox:`0 0 ${W} ${H}`},document.getElementById("exportChart"));
+    [0,5,10,15,20,25].forEach(v=>{el("line",{x1:sx(v),x2:sx(v),y1:T-4,y2:H-22,stroke:"var(--grid)","stroke-width":1},s);const t=el("text",{x:sx(v),y:H-6,"text-anchor":"middle",class:"tick"},s);t.textContent=v});
+    exp.forEach((d,i)=>{const y=T+i*rowH+(rowH-bh)/2;
+      const lb=el("text",{x:L-10,y:y+bh/2+4,"text-anchor":"end",class:"lbl"},s);lb.textContent=d[0];
+      el("path",{d:barPath(sx(0),sx(d[1]),y,bh),fill:i<2?"var(--seq)":"var(--seq-soft)"},s);
+      const vt=el("text",{x:sx(d[1])+6,y:y+bh/2+4,class:"val"},s);vt.textContent=d[1].toFixed(d[1]<10?2:1).replace(/\.?0+$/,"");
+      const hit=el("rect",{x:0,y:T+i*rowH,width:W,height:rowH,class:"hit"},s);
+      bindHit(hit,`<b>${d[0]}</b> ${d[1]}억 달러<br>${d[3]}<br><span style="opacity:.75">출처: ${d[2]}</span>`)});
+    el("line",{x1:sx(0),x2:sx(0),y1:T-4,y2:H-22,stroke:"var(--axis)","stroke-width":1},s);
+  })();
+
+  // 2) growth diverging
+  const gr=[["인도네시아",23.0],["필리핀",22.8],["태국",11.0],["말레이시아",6.2],["일본",5.0],["싱가포르",-4.7],["베트남",-11.7],["중국",-19.5]];
+  (function(){
+    const W=420,L=78,R=44,rowH=26,bh=14,T=8,H=T+gr.length*rowH+24,mn=-25,mx=25,sx=v=>L+(W-L-R)*(v-mn)/(mx-mn);
+    const s=el("svg",{viewBox:`0 0 ${W} ${H}`},document.getElementById("growthChart"));
+    [-20,-10,0,10,20].forEach(v=>{el("line",{x1:sx(v),x2:sx(v),y1:T-4,y2:H-22,stroke:"var(--grid)","stroke-width":1},s);const t=el("text",{x:sx(v),y:H-6,"text-anchor":"middle",class:"tick"},s);t.textContent=(v>0?"+":"")+v+"%"});
+    gr.forEach((d,i)=>{const y=T+i*rowH+(rowH-bh)/2,pos=d[1]>=0;
+      const lb=el("text",{x:L-10,y:y+bh/2+4,"text-anchor":"end",class:"lbl"},s);lb.textContent=d[0];
+      el("path",{d:barPath(sx(0),sx(d[1]),y,bh),fill:pos?"var(--pos)":"var(--neg)"},s);
+      const vt=el("text",{x:pos?sx(d[1])+6:sx(d[1])-6,y:y+bh/2+4,"text-anchor":pos?"start":"end",class:"val"},s);vt.textContent=(pos?"+":"")+d[1]+"%";
+      if(!pos){lb.setAttribute("x",L-10)}
+      const hit=el("rect",{x:0,y:T+i*rowH,width:W,height:rowH,class:"hit"},s);
+      bindHit(hit,`<b>${d[0]}</b> 전년 대비 ${(pos?"+":"")+d[1]}%<br><span style="opacity:.75">${d[0]==="중국"?"대한화장품산업연구원 (코스모닝)":"대한화장품산업연구원 잠정"}</span>`)});
+    el("line",{x1:sx(0),x2:sx(0),y1:T-4,y2:H-22,stroke:"var(--axis)","stroke-width":1.5},s);
+  })();
+
+  // 3) China share — dated points; gap 2021→2025 drawn dashed (intermediate years not collected)
+  (function(){
+    const pts=[[2021.5,53.2,"2021년","대한화장품산업연구원, 정점"],[2025.5,17.6,"2025년","대한화장품산업연구원"],[2026.25,14.4,"2026년 상반기","식약처 (코스인코리아)"]];
+    const W=520,H=230,L=40,R=56,T=16,B=30,x0=2021,x1=2026.5,sx=v=>L+(W-L-R)*(v-x0)/(x1-x0),sy=v=>T+(H-T-B)*(1-v/60);
+    const s=el("svg",{viewBox:`0 0 ${W} ${H}`},document.getElementById("shareChart"));
+    [0,20,40,60].forEach(v=>{el("line",{x1:L,x2:W-R,y1:sy(v),y2:sy(v),stroke:v===0?"var(--axis)":"var(--grid)","stroke-width":1},s);const t=el("text",{x:L-8,y:sy(v)+4,"text-anchor":"end",class:"tick"},s);t.textContent=v});
+    [2021,2022,2023,2024,2025,2026].forEach(y=>{const t=el("text",{x:sx(y+.5),y:H-8,"text-anchor":"middle",class:"tick"},s);t.textContent=y});
+    el("line",{x1:sx(pts[0][0]),y1:sy(pts[0][1]),x2:sx(pts[1][0]),y2:sy(pts[1][1]),stroke:"var(--seq)","stroke-width":2,"stroke-dasharray":"4 5"},s);
+    el("line",{x1:sx(pts[1][0]),y1:sy(pts[1][1]),x2:sx(pts[2][0]),y2:sy(pts[2][1]),stroke:"var(--seq)","stroke-width":2},s);
+    pts.forEach((p,i)=>{const cx=sx(p[0]),cy=sy(p[1]);
+      el("circle",{cx,cy,r:5.5,fill:"var(--seq)",stroke:"var(--surface)","stroke-width":2},s);
+      const t=el("text",{x:i===2?cx+10:cx,y:i===2?cy+4:cy-12,"text-anchor":i===2?"start":"middle",class:"val"},s);t.textContent=p[1]+"%";
+      const hit=el("circle",{cx,cy,r:16,class:"hit"},s);
+      bindHit(hit,`<b>${p[2]}</b> 중국 비중 ${p[1]}%<br><span style="opacity:.75">${p[3]}</span>`)});
+  })();
+
+  // 4) TikTok Shop top 3
+  (function(){
+    const d=[["메디큐브",62.8],["Dr. Melaxin",38.8],["Tarte",24.3]];
+    const W=420,L=92,R=48,rowH=34,bh=16,T=6,H=T+d.length*rowH+24,max=70,sx=v=>L+(W-L-R)*v/max;
+    const s=el("svg",{viewBox:`0 0 ${W} ${H}`},document.getElementById("tiktokChart"));
+    [0,35,70].forEach(v=>{el("line",{x1:sx(v),x2:sx(v),y1:T-2,y2:H-22,stroke:"var(--grid)","stroke-width":1},s);const t=el("text",{x:sx(v),y:H-6,"text-anchor":"middle",class:"tick"},s);t.textContent=v});
+    d.forEach((r,i)=>{const y=T+i*rowH+(rowH-bh)/2;
+      const lb=el("text",{x:L-10,y:y+bh/2+4,"text-anchor":"end",class:"lbl"},s);lb.textContent=r[0];
+      el("path",{d:barPath(sx(0),sx(r[1]),y,bh),fill:i===0?"var(--seq)":"var(--seq-soft)"},s);
+      const vt=el("text",{x:sx(r[1])+6,y:y+bh/2+4,class:"val"},s);vt.textContent=r[1];
+      const hit=el("rect",{x:0,y:T+i*rowH,width:W,height:rowH,class:"hit"},s);
+      bindHit(hit,`<b>${r[0]}</b> ${r[1]}백만 달러 (2026 Q2)<br><span style="opacity:.75">Beauty Independent · Charm.io 추정</span>`)});
+    el("line",{x1:sx(0),x2:sx(0),y1:T-2,y2:H-22,stroke:"var(--axis)","stroke-width":1},s);
+  })();
+
+  // 5) regulation timeline
+  const ev=[
+    ["2025-09-01","EU","옴니버스 VII 적용","CMR 22종 금지, TPO 전면 금지. 재고 소진 유예 없음","past"],
+    ["2025-10","미국","관세 체계","기본 상호관세 15%, 금속 용기는 최대 50% 추가, 800달러 이하 소액 면세 폐지","past"],
+    ["2025-11-14","중국","NMPA 개혁 의견 제18호","효능 평가 방법 자율 선택, 세계 최초 출시 제품은 제조국 판매허가 서류 면제","past"],
+    ["2026-01","미국","MoCRA 현황","시설 등록·제품 리스팅 시행 중, GMP·향료 알레르겐 규정은 미발표","past"],
+    ["2026-08-12","EU","PPWR 적용","화장품 포장 포함, 기술문서·적합성 선언(DoC) 필요","past"],
+    ["2026-10-17","인도네시아","할랄 전환기간 종료","BPJPH가 인정한 해외 인증서로만 반입 전 등록 가능","now"],
+    ["2026-10-18","인도네시아","할랄 표시 의무 시행","비할랄 제품은 비할랄 표시 의무 (국내 보도 기준)","now"]];
+  const tl=document.getElementById("timeline");
+  ev.forEach(e=>{const r=document.createElement("div");r.className="ev "+e[4];
+    r.innerHTML=`<div class="d">${e[0]}</div><div class="dot" aria-hidden="true"></div><div class="t"><b>${e[1]} · ${e[2]}</b>${e[4]==="now"?' <span class="pill crit">● 임박</span>':''}<p>${e[3]}</p></div>`;tl.appendChild(r)});
+})();
+</script>
